@@ -62,7 +62,7 @@ optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
 train_loss_results = []
 train_accuracy_results = []
 
-num_epochs = 201
+num_epochs = 401
 
 for epoch in range(num_epochs):
   epoch_loss_avg = tfe.metrics.Mean()
@@ -103,3 +103,23 @@ axes[1].plot(train_accuracy_results)
 
 plt.show()
 
+
+# Begin evaluation of the model
+test_url = "http://download.tensorflow.org/data/iris_test.csv"
+
+test_fp = tf.keras.utils.get_file(fname=os.path.basename(test_url),
+                                  origin=test_url)
+
+test_dataset = tf.data.TextLineDataset(test_fp)
+test_dataset = test_dataset.skip(1)             # skip header row
+test_dataset = test_dataset.map(parse_csv)      # parse each row with the funcition created earlier
+test_dataset = test_dataset.shuffle(1000)       # randomize
+test_dataset = test_dataset.batch(32)           # use the same batch size as the training set
+
+test_accuracy = tfe.metrics.Accuracy()
+
+for (x, y) in test_dataset:
+  prediction = tf.argmax(model(x), axis=1, output_type=tf.int32)
+  test_accuracy(prediction, y)
+
+print("Test set accuracy: {:.3%}".format(test_accuracy.result()))
